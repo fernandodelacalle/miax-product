@@ -1,3 +1,21 @@
+---
+marp: true
+theme: default
+paginate: true
+---
+
+<style>
+img[alt~="center"] {
+  display: block;
+  margin: 0 auto;
+}
+</style>
+
+#  Despliege simple en Google Cloud
+
+---
+
+
 1. Crear instancia
 
 2. Conenctar por SSH

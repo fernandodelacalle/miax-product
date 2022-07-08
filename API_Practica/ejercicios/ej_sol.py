@@ -6,12 +6,14 @@ import json
 
 #%%
 
+
+
 class BMEApiHandler:
 
     def __init__(self):
         self.url_base = 'https://miax-gateway-jog4ew3z3q-ew.a.run.app'
         self.competi = 'mia_9'
-        self.user_key = ''
+        self.user_key = 'AIzaSyCp_OAFjfw5uM_3ko3pZbGqJRvXqBGxLYE'
 
     def get_ticker_master(self, market):
         url = f'{self.url_base}/data/ticker_master'
@@ -62,6 +64,72 @@ class BMEApiHandler:
         #print(json.dumps(params))
         response = requests.post(url_auth, data=json.dumps(params))
         print(response.json())
+    
+    def get_algos(self):
+        url = f'{self.url_base}/participants/algorithms'
+        params = {'competi': self.competi,
+                'key': self.user_key}
+        response = requests.get(url, params)
+        algos = response.json()
+        if algos:
+            algos_df = pd.DataFrame(algos)
+            return algos_df
+
+    def allocs_to_frame(self, json_allocations):
+        alloc_list = []
+        for json_alloc in json_allocations:
+            #print(json_alloc)
+            allocs = pd.DataFrame(json_alloc['allocations'])
+            allocs.set_index('ticker', inplace=True)
+            alloc_serie = allocs['alloc']
+            alloc_serie.name = json_alloc['date'] 
+            alloc_list.append(alloc_serie)
+        all_alloc_df = pd.concat(alloc_list, axis=1).T
+        return all_alloc_df
+
+    def get_allocations(self, algo_tag, market):
+        url = f'{self.url_base}/participants/algo_allocations'
+        params = {
+            'key': self.user_key,
+            'competi': self.competi,
+            'algo_tag': algo_tag,
+            'market': market,
+        }
+        response = requests.get(url, params)
+        df_allocs = self.allocs_to_frame(response.json())
+        return df_allocs
+
+    def backtest_algo(self, algo_tag, market):
+        url = f'{self.url_base}/participants/exec_algo'
+        url_auth = f'{url}?key={self.user_key}'
+        params = {
+            'competi': self.competi,
+            'algo_tag': algo_tag,
+            'market': market,
+            }
+        response = requests.post(url_auth, data=json.dumps(params))
+        if response.status_code == 200:
+            exec_data = response.json()
+            status = exec_data.get('status')
+            res_data = exec_data.get('content')
+            if res_data:
+                performace = pd.Series(res_data['result'])
+                trades = pd.DataFrame(res_data['trades'])
+                return performace, trades
+        else:
+            exec_data = dict()
+            print(response.text)
+    
+    def delete_allocs(self, algo_tag, market):
+        url = f'{self.url_base}/participants/delete_allocations'
+        url_auth = f'{url}?key={self.user_key}'
+        params = {
+            'competi': self.competi,
+            'algo_tag': algo_tag,
+            'market': market,
+            }
+        response = requests.post(url_auth, data=json.dumps(params))
+        print(response.text)
 
 
 
@@ -88,7 +156,7 @@ df_close = pd.DataFrame(data_close_dict)
 # y crea una lista de allocations con valor 1/n_activos.
 # - Envía el post de estos allocations.
 
-algo_tag = ''
+algo_tag = 'test_user_1_miax9_algo1'
 for fecha, data in df_close.iloc[::200].iterrows():
     print(fecha)
     in_index = data.dropna().index
@@ -106,5 +174,16 @@ for fecha, data in df_close.iloc[::200].iterrows():
 # - Usa la API para ejecutar el backtesting.
 # - Elimina todas las allocations.
 
+# %%
+api_handler.get_algos()
+
+# %%
+api_handler.get_allocations(algo_tag, market)
 
 
+# %%
+performace, trades = api_handler.backtest_algo(algo_tag, market)
+
+
+# %%
+api_handler.delete_allocs(algo_tag, market)

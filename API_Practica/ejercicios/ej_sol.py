@@ -133,57 +133,64 @@ class BMEApiHandler:
 
 
 
-#%% Descarga el maestro de valores.
+class EqWeightedAlgo:
 
-market = 'IBEX'
-api_handler = BMEApiHandler()
-ticker_master = api_handler.get_ticker_master(market=market)
+    def __init__(self, market, algo_tag, rbal_days):
+        self.market = market
+        self.algo_tag = algo_tag
+        self.rbal_days = rbal_days
+        self.api_handler = BMEApiHandler()
+        self.df_close = None
 
 
-#%% Descarga todos los datos para cada ticker del maestro.
-# Baja solo el close. Con las series close,
-#  crea un datafame donde tengas como columnas los tickers y filas las fechas.
+    def get_data(self):
+        data_close_dict = {}
+        ticker_master = self.api_handler.get_ticker_master(market=self.market)
+        for idx, row in ticker_master.iterrows():
+            tck = row.ticker
+            print(tck)
+            close_data = self.api_handler.get_close_data(self.market, tck)
+            data_close_dict[tck] = close_data
+        self.df_close = pd.DataFrame(data_close_dict)
 
-data_close_dict = {}
-for idx, row in ticker_master.iterrows():
-    tck = row.ticker
-    close_data = api_handler.get_close_data(market, tck)
-    data_close_dict[tck] = close_data
-df_close = pd.DataFrame(data_close_dict)
 
-# %% 
-# - Recorre este dataframe cada 200 filas 
-# y crea una lista de allocations con valor 1/n_activos.
-# - Envía el post de estos allocations.
+    def run(self):
+        self.get_data()
+        pass
 
-algo_tag = 'test_user_1_miax9_algo1'
-for fecha, data in df_close.iloc[::200].iterrows():
-    print(fecha)
-    in_index = data.dropna().index
-    alloc = 1 / len(in_index)
-    allocation = [ 
-        {'ticker': tk, 'alloc': alloc} 
-        for tk in in_index
-    ]
-    str_date = fecha.strftime('%Y-%m-%d')
-    api_handler.send_alloc(algo_tag, market, str_date, allocation)
+    def run_simulation(self):
+        self.get_data()
+        for fecha, data in self.df_close.iloc[::200].iterrows():
+            print(fecha)
+            in_index = data.dropna().index
+            alloc = 1 / len(in_index)
+            allocation = [ 
+                {'ticker': tk, 'alloc': alloc} 
+                for tk in in_index
+            ]
+            str_date = fecha.strftime('%Y-%m-%d')
+            self.api_handler.send_alloc(
+                self.algo_tag, self.market, str_date, allocation
+            )
+        performace, trades = self.api_handler.backtest_algo(self.algo_tag, self.market)
+        self.api_handler.delete_allocs(self.algo_tag, self.market)
+        return performace, trades
+
+
+#%%
+
+eq_w_1 = EqWeightedAlgo(
+    market='IBEX',
+    algo_tag='test_user_1_miax9_algo3',
+    rbal_days=100,
+)
+performace, trades = eq_w_1.run_simulation()
+
+
+
+
+
+
 
 
 # %%
-# - Usa la API para obtener todas las allocations introducidas.
-# - Usa la API para ejecutar el backtesting.
-# - Elimina todas las allocations.
-
-# %%
-api_handler.get_algos()
-
-# %%
-api_handler.get_allocations(algo_tag, market)
-
-
-# %%
-performace, trades = api_handler.backtest_algo(algo_tag, market)
-
-
-# %%
-api_handler.delete_allocs(algo_tag, market)

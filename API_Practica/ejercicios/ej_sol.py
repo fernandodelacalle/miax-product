@@ -12,7 +12,7 @@ class BMEApiHandler:
     def __init__(self):
         self.url_base = 'https://miax-gateway-jog4ew3z3q-ew.a.run.app'
         self.competi = 'mia_9'
-        self.user_key = 'AIzaSyCp_OAFjfw5uM_3ko3pZbGqJRvXqBGxLYE'
+        self.user_key = ''
 
     def get_ticker_master(self, market):
         url = f'{self.url_base}/data/ticker_master'

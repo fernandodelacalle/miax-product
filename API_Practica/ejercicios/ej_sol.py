@@ -12,7 +12,7 @@ class BMEApiHandler:
     def __init__(self):
         self.url_base = 'https://miax-gateway-jog4ew3z3q-ew.a.run.app'
         self.competi = 'mia_9'
-        self.user_key = ''
+        self.user_key = 'AIzaSyCp_OAFjfw5uM_3ko3pZbGqJRvXqBGxLYE'
 
     def get_ticker_master(self, market):
         url = f'{self.url_base}/data/ticker_master'
@@ -35,6 +35,21 @@ class BMEApiHandler:
         tk_data = response.json()
         series_data = pd.read_json(tk_data, typ='series')
         return series_data
+
+    def get_ohlc_data(self, market, tck):
+        url = f'{self.url_base}/data/time_series'
+        params = {
+            'market': market,
+            'key': self.user_key,
+            'ticker': tck,
+            'close': False
+        }
+        response = requests.get(url, params)
+        tk_data = response.json()
+        df_data = pd.read_json(tk_data, typ='frame')
+        return df_data
+
+
 
 #%%
 

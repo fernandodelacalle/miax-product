@@ -11,7 +11,7 @@ img[alt~="center"] {
 }
 </style>
 
-#  Despliege simple en Google Cloud
+#  Despliege simple en una máquina virtual
 
 ---
 

@@ -10,7 +10,7 @@ options(scipen=999)
   mercado = "IBEX"
   
   url = paste("https://miax-gateway-jog4ew3z3q-ew.a.run.app/data/ticker_master?",
-              "competi=mia_4", "&market=", mercado, "&key=", key, sep = "")
+              "competi=mia_11", "&market=", mercado, "&key=", key, sep = "")
   
   datos = fromJSON(url, flatten = TRUE)
   datos = as.data.frame(datos$master)
